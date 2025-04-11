@@ -127,10 +127,15 @@ class BidirectionalChat:
             widget.destroy()
 
     def disconnect(self):
-        global client_socket
         try:
-            client_socket.close()
+            if self.client_socket:
+               self.client_socket.close() 
+            if self.conn:
+                self.conn.close()
+            self.connected = False
+            self.append_messages("Disconnected")
             messagebox.showinfo("Disconnected!!", "You have been disconnected from the chat bozo, sorry.")
+            self.show_connect_screen()
         except Exception as e:
             messagebox.showerror(f"Error: {e}")
 # Entry point
