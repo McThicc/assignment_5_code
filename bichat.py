@@ -13,6 +13,7 @@ class BidirectionalChat:
         self.target_port = target_port
         self.conn = None
         self.client_socket = None
+        self.connected = False
 
         root.title("Bi-directional Chat")
         root.config(bg="pink")
@@ -64,19 +65,24 @@ class BidirectionalChat:
         try:
             self.client_socket = socket(AF_INET, SOCK_STREAM)
             self.client_socket.connect((self.target_ip, self.target_port))
-            self.append_message(f"[Sender] Connected to {self.target_ip}:{self.target_port}")
+            self.append_messages(f"[Sender] Connected to {self.target_ip}:{self.target_port}")
+            self.connected = True
         except Exception as e:
-            self.append_message(f"[Sender] Could not connect: {e}")
+            self.append_messages(f"[Sender] Could not connect: {e}")
+            self.connected = False
 
     def send_messages(self, event=None):
         msg = self.msg_entry.get()
         if msg and self.client_socket:
-            try:
-                self.client_socket.send(msg.encode())
-                self.append_messages(f"[You]: {msg}")
-                self.msg_entry.delete(0, tk.END)
-            except Exception as e:
-                self.append_messages(f"Failed to send: {e}")
+            if self.connected:
+                try:
+                    self.client_socket.send(msg.encode())
+                    self.append_messages(f"[You]: {msg}")
+                    self.msg_entry.delete(0, tk.END)
+                except Exception as e:
+                    self.append_messages(f"Failed to send: {e}")
+            else:
+                self.append_messages("Not Connected!!!")
 
 # Entry point
 if __name__ == "__main__":
