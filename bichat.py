@@ -6,20 +6,51 @@ import tkinter as tk
 from tkinter import messagebox, scrolledtext, PhotoImage, simpledialog
 
 class BidirectionalChat:
-    def __init__(self, root, listen_port, target_ip, target_port):
+    def __init__(self, root):
         self.root = root
-        self.listen_port = listen_port
-        self.target_ip = target_ip
-        self.target_port = target_port
+        root.title("Bi-directional Chat")
+        self.username = ""
         self.conn = None
         self.client_socket = None
         self.connected = False
 
-        root.title("Bi-directional Chat")
-        root.config(bg="pink")
-        root.minsize(600, 900)
-        root.maxsize(900, 900)
-        root.geometry("400x400+650+150")
+        self.show_connect_screen()
+    
+    def show_connect_screen(self):
+        self.clear_root()
+        self.username = tk.StringVar()
+        self.listen_port = tk.StringVar()
+        self.target_ip = tk.StringVar()
+        self.target_port = tk.StringVar()
+
+        tk.Label(self.root, text="Enter your username:").pack()
+        tk.Entry(self.root, textvariable=self.username).pack()
+        tk.Label(self.root, text="Enter listening port:").pack()
+        tk.Entry(self.root, textvariable=self.listen_port).pack()
+        tk.Label(self.root, text="Enter target IP:").pack()
+        tk.Entry(self.root, textvariable=self.target_ip).pack()
+        tk.Label(self.root, text="Enter target port:").pack()
+        tk.Entry(self.root, textvariable=self.target_port).pack()
+
+        tk.Button(self.root, text="Connect", command=self.start_chat).pack(pady=10)
+    
+    def start_chat(self):
+        try:
+            self.username = self.username.get()
+            listen_port = int(self.listen_port.get())
+            self.target_ip = self.target_ip.get()
+            self.target_port = int(self.target_port.get())
+
+            self.listen_port = listen_port
+            self.show_chat_screen()
+
+            threading.Thread(target=self.receive_messages, daemon=True).start()
+            threading.Thread(target=self.connect_client_socket, daemon=True).start()
+        except Exception as e:
+            messagebox.showerror(f"Error: {e}")
+
+    def show_chat_screen(self):
+        self.clear_root()
 
         self.chat_log = scrolledtext.ScrolledText(root, wrap=tk.WORD, state='disabled', font=("Arial", 12))
         self.chat_log.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
@@ -31,9 +62,7 @@ class BidirectionalChat:
         self.send_btn = tk.Button(root, text="Send", command=self.send_messages, font=("Arial", 12))
         self.send_btn.pack(side=tk.RIGHT, padx=(5, 10), pady=10)
 
-        threading.Thread(target=self.receive_messages, daemon=True).start()
-        threading.Thread(target=self.connect_client_socket, daemon=True).start()
-        
+
     def append_messages(self, message):
         self.chat_log.configure(state="normal")
         self.chat_log.insert(tk.END, message + "\n")
@@ -43,9 +72,9 @@ class BidirectionalChat:
     def receive_messages(self):
         server_socket = socket(AF_INET, SOCK_STREAM)
         server_socket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
-        server_socket.bind(('', listen_port))
+        server_socket.bind(('', self.listen_port))
         server_socket.listen(1)
-        self.append_messages(f"[Receiver] Listening on port {listen_port}...")
+        self.append_messages(f"[Receiver] Listening on port {self.listen_port}...")
 
         self.conn, addr = server_socket.accept()
         self.append_messages(f"[Receiver] Connection from {addr}")
@@ -76,7 +105,8 @@ class BidirectionalChat:
         if msg and self.client_socket:
             if self.connected:
                 try:
-                    self.client_socket.send(msg.encode())
+                    usr_msg = f"[{self.username}]: {msg}"
+                    self.client_socket.send(usr_msg.encode())
                     self.append_messages(f"[You]: {msg}")
                     self.msg_entry.delete(0, tk.END)
                 except Exception as e:
@@ -84,17 +114,14 @@ class BidirectionalChat:
             else:
                 self.append_messages("Not Connected!!!")
 
+    def clear_root(self):
+        for widget in self.root.winfo_children():
+            widget.destroy()
+
 # Entry point
 if __name__ == "__main__":
 
-    if len(sys.argv) != 4:
-        print("Usage: python chat_node.py  <listening_port> <target_ip> <target_port>")
-        sys.exit(1)
-
-    listen_port = int(sys.argv[1])
-    target_ip = sys.argv[2]
-    target_port = int(sys.argv[3])
-
     root = tk.Tk()
-    app = BidirectionalChat(root, listen_port, target_ip, target_port)
+    root.geometry("400x400+650+150")
+    app = BidirectionalChat(root)
     root.mainloop()
