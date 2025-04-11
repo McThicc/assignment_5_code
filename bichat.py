@@ -84,7 +84,7 @@ class BidirectionalChat:
                 message = self.conn.recv(1024).decode()
                 if not message:
                     break
-                self.append_messages(f"\n[Them]: {message}")
+                self.append_messages(f"{message}")
             except Exception as e:
                 self.append_messages(f'An error occurred: {e}')
                 break
@@ -107,7 +107,7 @@ class BidirectionalChat:
                 try:
                     usr_msg = f"[{self.username}]: {msg}"
                     self.client_socket.send(usr_msg.encode())
-                    self.append_messages(f"[You]: {msg}")
+                    self.append_messages(f"[{self.username}]: {msg}")
                     self.msg_entry.delete(0, tk.END)
                 except Exception as e:
                     self.append_messages(f"Failed to send: {e}")
