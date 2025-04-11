@@ -6,6 +6,9 @@ import tkinter as tk
 from tkinter import messagebox, scrolledtext, PhotoImage, simpledialog
 
 class BidirectionalChat:
+
+    default_font = ("Verdana", 12)
+
     def __init__(self, root):
         self.root = root
         root.title("Bi-directional Chat")
@@ -23,13 +26,16 @@ class BidirectionalChat:
         self.target_ip = tk.StringVar()
         self.target_port = tk.StringVar()
 
-        tk.Label(self.root, text="Enter your username:").pack()
+        self.root.config(bg="lightgray")
+        self.root.option_add("*Font", self.default_font)
+
+        tk.Label(self.root, text="Enter your username:", bg="lightgray").pack()
         tk.Entry(self.root, textvariable=self.username).pack()
-        tk.Label(self.root, text="Enter listening port:").pack()
+        tk.Label(self.root, text="Enter listening port:", bg="lightgray").pack()
         tk.Entry(self.root, textvariable=self.listen_port).pack()
-        tk.Label(self.root, text="Enter target IP:").pack()
+        tk.Label(self.root, text="Enter target IP:", bg="lightgray").pack()
         tk.Entry(self.root, textvariable=self.target_ip).pack()
-        tk.Label(self.root, text="Enter target port:").pack()
+        tk.Label(self.root, text="Enter target port:", bg="lightgray").pack()
         tk.Entry(self.root, textvariable=self.target_port).pack()
 
         tk.Button(self.root, text="Connect", command=self.start_chat).pack(pady=10)
@@ -52,16 +58,18 @@ class BidirectionalChat:
     def show_chat_screen(self):
         self.clear_root()
 
-        self.chat_log = scrolledtext.ScrolledText(root, wrap=tk.WORD, state='disabled', font=("Arial", 12))
+        self.root.config(bg="lightblue")
+        self.chat_log = scrolledtext.ScrolledText(root, wrap=tk.WORD, state='disabled')
         self.chat_log.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
 
-        self.msg_entry = tk.Entry(root, font=("Arial", 12))
+        self.msg_entry = tk.Entry(root)
         self.msg_entry.pack(side=tk.LEFT, padx=(10, 5), pady=10, fill=tk.X, expand=True)
         self.msg_entry.bind("<Return>", self.send_messages)
 
-        self.send_btn = tk.Button(root, text="Send", command=self.send_messages, font=("Arial", 12))
+        self.send_btn = tk.Button(root, text="Send", command=self.send_messages)
         self.send_btn.pack(side=tk.RIGHT, padx=(5, 10), pady=10)
 
+        self.disconnect_btn = tk.Button(root, text="Disconnect", command=self.disconnect).pack()
 
     def append_messages(self, message):
         self.chat_log.configure(state="normal")
@@ -118,6 +126,13 @@ class BidirectionalChat:
         for widget in self.root.winfo_children():
             widget.destroy()
 
+    def disconnect(self):
+        global client_socket
+        try:
+            client_socket.close()
+            messagebox.showinfo("Disconnected!!", "You have been disconnected from the chat bozo, sorry.")
+        except Exception as e:
+            messagebox.showerror(f"Error: {e}")
 # Entry point
 if __name__ == "__main__":
 
