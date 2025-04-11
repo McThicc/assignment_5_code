@@ -45,19 +45,19 @@ class BidirectionalChat:
         server_socket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
         server_socket.bind(('', listen_port))
         server_socket.listen(1)
-        print(f"[Receiver] Listening on port {listen_port}...")
+        self.append_messages(f"[Receiver] Listening on port {listen_port}...")
 
         self.conn, addr = server_socket.accept()
-        print(f"[Receiver] Connection from {addr}")
+        self.append_messages(f"[Receiver] Connection from {addr}")
 
         while True:
             try:
                 message = self.conn.recv(1024).decode()
                 if not message:
                     break
-                print(f"\n[Them]: {message}")
+                self.append_messages(f"\n[Them]: {message}")
             except Exception as e:
-                print(f'An error occurred: {e}')
+                self.append_messages(f'An error occurred: {e}')
                 break
         self.conn.close()
     
