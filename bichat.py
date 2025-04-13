@@ -52,6 +52,7 @@ class BidirectionalChat:
             self.listen_port = int(self.listen_port.get())
             self.target_ip = self.target_ip.get()
             self.target_port = int(self.target_port.get())
+            threading.Thread(target=self.receive_messages, daemon=True).start()
             self.show_loading_screen()
         except Exception as e:
             messagebox.showerror(f"Error: {e}")
@@ -84,8 +85,6 @@ class BidirectionalChat:
 
         self.disconnect_btn = tk.Button(root, text="Disconnect", command=self.disconnect).pack()
 
-        threading.Thread(target=self.receive_messages, daemon=True).start()
-
 
     #The function that appends messages to the chat log
     def append_messages(self, message):
@@ -100,10 +99,10 @@ class BidirectionalChat:
         server_socket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
         server_socket.bind(('', self.listen_port))
         server_socket.listen(1)
-        self.append_messages(f"[Receiver] Listening on port {self.listen_port}...")
+        print(f"[Receiver] Listening on port {self.listen_port}...")
 
         self.conn, addr = server_socket.accept()
-        self.append_messages(f"[Receiver] Connection from {addr}")
+        print(f"[Receiver] Connection from {addr}")
 
         while True:
             try:
