@@ -1,6 +1,6 @@
 import threading
 import sys
-import datetime
+import time
 from socket import socket, AF_INET, SOCK_STREAM, SOL_SOCKET, SO_REUSEADDR
 import tkinter as tk
 from tkinter import messagebox, scrolledtext, PhotoImage, simpledialog
@@ -116,17 +116,18 @@ class BidirectionalChat:
         self.conn.close()
     
     #Sets up the client socket for sending to the other server
-    def connect_client_socket(self):
-        try:
-            self.client_socket = socket(AF_INET, SOCK_STREAM)
-            self.client_socket.connect((self.target_ip, self.target_port))
-            self.connected = True
-                
-            self.root.after(0, self.show_chat_screen)
-        except Exception as e:
-            self.append_messages(f"[Sender] Could not connect: {e}")
-            self.connected = False
-            self.update_status("Connection Failed, You Suck!!!")
+    def connect_client_socket(self, retries=5, delay=3):
+        for attempt in range(retries):
+            try:
+                self.client_socket = socket(AF_INET, SOCK_STREAM)
+                self.client_socket.connect((self.target_ip, self.target_port))
+                self.connected = True
+                self.root.after(0, self.show_chat_screen)
+                return
+            except Exception as e:
+                self.connected = False
+                self.update_status(f"Attempt {attempt + 1} failed")
+                time.sleep(delay)
 
     #Attempts to send a message
     #Attaches desired username to message so the other person know who you are
