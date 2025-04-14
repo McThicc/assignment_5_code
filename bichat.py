@@ -2,6 +2,7 @@ import threading
 import sys
 import time
 from socket import socket, AF_INET, SOCK_STREAM, SOCK_DGRAM, SOL_SOCKET, SO_REUSEADDR, SO_BROADCAST
+import struct
 import tkinter as tk
 from tkinter import messagebox, scrolledtext, PhotoImage, simpledialog
 import platform
@@ -54,12 +55,10 @@ class BidirectionalChat:
         try:
             self.username = self.username.get()
             self.listen_port = int(self.listen_port.get())
-            self.target_ip = self.target_ip.get()
             self.target_port = int(self.target_port.get())
-
             if self.broadcast_mode.get():
                 threading.Thread(target=self.listen_udp_broadcasts, daemon=True).start()
-
+            self.target_ip = self.target_ip.get()
             threading.Thread(target=self.receive_messages, daemon=True).start()
             self.show_loading_screen()
         except Exception as e:
@@ -229,6 +228,24 @@ class BidirectionalChat:
             self.connected = False
             self.root.after(0, lambda: messagebox.showerror("Connection Failed", str(e)))
             self.root.after(0, self.show_connect_screen)
+
+    #The function that gets the broadcast address of the local network
+    def get_broadcast_address(self):
+        try:
+            local_ip = socket.gethostbyname(socket.gethostname())
+            if local_ip.startswith("127."):
+                with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+                    s.connect(("8.8.8.8", 80))
+                    local_ip = s.getsockname()[0]
+            
+            ip_parts = list(map(int, local_ip.split(".")))
+            broadcast_parts = ip_parts[:3] + [255]
+
+            return ".".join(map(str, broadcast_parts))
+        except Exception as e:
+            self.append_messages(f"Error getting broadcast address: {e}")
+            # Fallback to a common broadcast address if the above fails
+            return "255.255.255.255"
 
 # Main Script that makes the thing work
 if __name__ == "__main__":
