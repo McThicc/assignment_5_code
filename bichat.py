@@ -234,20 +234,19 @@ class BidirectionalChat:
     #The function that gets the broadcast address of the local network
     def get_broadcast_address(self):
         try:
-            local_ip = socket.gethostbyname(socket.gethostname())
-            if local_ip.startswith("127."):
-                with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-                    s.connect(("8.8.8.8", 80))
-                    local_ip = s.getsockname()[0]
-            
-            ip_parts = list(map(int, local_ip.split(".")))
-            broadcast_parts = ip_parts[:3] + [255]
+            temp_socket = socket(AF_INET, SOCK_DGRAM)
+            temp_socket.connect(("8.8.8.8", 80))  # Google's DNS - no data actually sent - I am using it to calculate
+            local_ip = temp_socket.getsockname()[0]
+            temp_socket.close()
 
-            return ".".join(map(str, broadcast_parts))
+            ip_parts = local_ip.split('.')
+            ip_parts[-1] = '255'
+            broadcast_ip = '.'.join(ip_parts)
+            return broadcast_ip
         except Exception as e:
-            self.append_messages(f"Error getting broadcast address: {e}")
-            # Fallback to a common broadcast address if the above fails
-            return "255.255.255.255"
+            print(f"[Broadcast IP Error] {e}")
+            return '255.255.255.255'  # Fallback if ^ this don't work
+
 
 # Main Script that makes the thing work
 if __name__ == "__main__":
