@@ -1,7 +1,7 @@
 import threading
 import sys
 import time
-from socket import socket, AF_INET, SOCK_STREAM, SOL_SOCKET, SO_REUSEADDR
+from socket import socket, AF_INET, SOCK_STREAM, SOCK_DGRAM, SOL_SOCKET, SO_REUSEADDR, SO_BROADCAST
 import tkinter as tk
 from tkinter import messagebox, scrolledtext, PhotoImage, simpledialog
 import platform
@@ -18,6 +18,7 @@ class BidirectionalChat:
         self.conn = None
         self.client_socket = None
         self.connected = False
+        self.udp_socket = None
 
         self.show_connect_screen()
     
@@ -31,6 +32,9 @@ class BidirectionalChat:
 
         self.root.config(bg="lightgray")
         self.root.option_add("*Font", self.default_font)
+
+        self.broadcast_mode = tk.BooleanVar()
+        tk.Checkbutton(self.root, text="Enable UDP Broadcast Mode", variable=self.broadcast_mode, bg="lightgray").pack()
 
         tk.Label(self.root, text="Enter your username:", bg="lightgray").pack()
         tk.Entry(self.root, textvariable=self.username).pack()
@@ -52,6 +56,10 @@ class BidirectionalChat:
             self.listen_port = int(self.listen_port.get())
             self.target_ip = self.target_ip.get()
             self.target_port = int(self.target_port.get())
+
+            if self.broadcast_mode.get():
+                threading.Thread(target=self.listen_udp_broadcasts, daemon=True).start()
+
             threading.Thread(target=self.receive_messages, daemon=True).start()
             self.show_loading_screen()
         except Exception as e:
@@ -85,6 +93,8 @@ class BidirectionalChat:
 
         self.disconnect_btn = tk.Button(root, text="Disconnect", command=self.disconnect).pack()
 
+        self.broadcast_btn = tk.Button(root, text="Broadcast", command=self.send_udp_broadcast)
+        self.broadcast_btn.pack(side=tk.RIGHT, padx=(5, 10), pady=10)
 
     #The function that appends messages to the chat log
     def append_messages(self, message):
@@ -129,6 +139,41 @@ class BidirectionalChat:
                 self.update_status(f"Attempt {attempt + 1} failed")
                 time.sleep(delay)
 
+    def listen_udp_broadcasts(self):
+        try:
+            self.udp_socket = socket (AF_INET, SOCK_DGRAM)
+            self.udp_socket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
+            self.udp_socket.bind(('', self.listen_port))
+
+            while True:
+                try:
+                    data, addr = self.udp_socket.recvfrom(1024)
+                    message = data.decode()
+                    self.append_messages(f"{message}")
+                except Exception as e:
+                    self.append_messages(f"[UDP Broadcast Error] {e}")
+                    break
+        finally:
+            if self.udp_socket:
+                self.udp_socket.close()
+
+    def send_udp_broadcast(self):
+        if not self.broadcast_mode.get():
+            return
+        
+        msg = self.msg_entry.get()
+        if msg:
+            try:
+                broadcast_msg = f"[{self.username} - Broadcast]: {msg}"
+                udp_sender = socket(AF_INET, SOCK_DGRAM)
+                udp_sender.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
+                udp_sender.sendto(broadcast_msg.encode(), ('255.255.255.255', self.target_port))
+                self.append_messages(broadcast_msg)
+                self.msg_entry.delete(0, tk.END)
+                udp_sender.close()
+            except Exception as e:
+                self.append_messages(f"Broadcast Failed :( - {e}")
+
     #Attempts to send a message
     #Attaches desired username to message so the other person know who you are
     #Logs the messsge into your chat log as well for continuity
@@ -165,6 +210,8 @@ class BidirectionalChat:
                self.client_socket.close() 
             if self.conn:
                 self.conn.close()
+            if self.udp_socket:
+                self.udp_socket.close()
             self.connected = False
             self.append_messages("Disconnected")
             messagebox.showinfo("Disconnected!!", "You have been disconnected from the chat bozo, sorry.")
