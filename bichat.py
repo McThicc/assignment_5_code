@@ -166,7 +166,9 @@ class BidirectionalChat:
                 broadcast_msg = f"[{self.username} - Broadcast]: {msg}"
                 udp_sender = socket(AF_INET, SOCK_DGRAM)
                 udp_sender.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
-                udp_sender.sendto(broadcast_msg.encode(), ('255.255.255.255', self.target_port))
+                broadcast_ip = self.get_broadcast_address()
+                print(f"Broadcasting to {broadcast_ip}:{self.target_port}")
+                udp_sender.sendto(broadcast_msg.encode(), (broadcast_ip, self.target_port))
                 self.append_messages(broadcast_msg)
                 self.msg_entry.delete(0, tk.END)
                 udp_sender.close()
