@@ -27,9 +27,9 @@ class BidirectionalChat:
     def show_connect_screen(self):
         self.clear_root()
         self.username = tk.StringVar()
-        self.listen_port = tk.StringVar()
+        self.listen_port = tk.StringVar(value="14142")
         self.target_ip = tk.StringVar()
-        self.target_port = tk.StringVar()
+        self.target_port = tk.StringVar(value="14142")
 
         self.root.config(bg="lightgray")
         self.root.option_add("*Font", self.default_font)
@@ -87,12 +87,16 @@ class BidirectionalChat:
         self.msg_entry.pack(side=tk.LEFT, padx=(10, 5), pady=10, fill=tk.X, expand=True)
         self.msg_entry.bind("<Return>", self.send_messages)
 
-        self.send_btn = tk.Button(root, text="Send", command=self.send_messages)
-        self.send_btn.pack(side=tk.RIGHT, padx=(5, 10), pady=10)
+        #Only shows the send button if UDP broadcast mode was disabled
+        if self.broadcast_mode.get() == False:
+            self.send_btn = tk.Button(root, text="Send", command=self.send_messages)
+            self.send_btn.pack(side=tk.RIGHT, padx=(5, 10), pady=10)
 
-        self.disconnect_btn = tk.Button(root, text="Disconnect", command=self.disconnect).pack()
+        self.disconnect_btn = tk.Button(root, text="Disconnect", command=self.disconnect)
+        self.disconnect_btn.pack(side=tk.RIGHT, padx=(5, 10), pady=10)
 
-        if self.broadcast_mode:
+        #Only shows the broadcast button if UDP broadcast mode was enabled
+        if self.broadcast_mode.get():
             self.broadcast_btn = tk.Button(root, text="Broadcast", command=self.send_udp_broadcast)
             self.broadcast_btn.pack(side=tk.RIGHT, padx=(5, 10), pady=10)
 
@@ -170,6 +174,7 @@ class BidirectionalChat:
             if self.udp_socket:
                 self.udp_socket.close()
 
+    #This does a lot and is very sketch
     def send_udp_broadcast(self):
         if not self.broadcast_mode.get():
             return
@@ -180,6 +185,7 @@ class BidirectionalChat:
                 broadcast_msg = f"[{self.username} - Broadcast]: {msg}"
                 udp_sender = socket(AF_INET, SOCK_DGRAM)
                 udp_sender.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
+                #Tries to calculate the proper broadcast address for the network. Defaults to 255.255.255.255 if it fails.
                 broadcast_ip = self.get_broadcast_address()
                 print(f"Broadcasting to {broadcast_ip}:{self.target_port}")
                 udp_sender.sendto(broadcast_msg.encode(), (broadcast_ip, self.target_port))
@@ -191,18 +197,20 @@ class BidirectionalChat:
 
     #Attempts to send a message
     #Attaches desired username to message so the other person know who you are
-    #Logs the messsge into your chat log as well for continuity
-    #Clears the chat box so you can start fresh with each message
     def send_messages(self, event=None):
         msg = self.msg_entry.get()
+        #If the user types "!quit" it will performs a disconnect the same as the button
         if msg == "!quit":
             self.disconnect()
         if msg and self.client_socket:
             if self.connected:
                 try:
+                    #Creates a new message with your username and desired message
                     usr_msg = f"[{self.username}]: {msg}"
                     self.client_socket.send(usr_msg.encode())
+                    #Logs the messsge into your chat log as well for continuity
                     self.append_messages(f"[{self.username}]: {msg}")
+                    #Clears the chat box so you can start fresh with each message
                     self.msg_entry.delete(0, tk.END)
                 except Exception as e:
                     self.append_messages(f"Failed to send: {e}")
@@ -223,6 +231,10 @@ class BidirectionalChat:
     #Closes both sockets and displays a disconnect message before returning the user to the login screen
     def disconnect(self):
         try:
+            #Sends a message to let the other user know that this user has disconnected
+            disconnect_msg = f"[{self.username}] has disconnected."
+            self.client_socket.send(disconnect_msg.encode())
+            #Shuts down all the sockets
             if self.client_socket:
                self.client_socket.close() 
             if self.conn:
@@ -235,6 +247,7 @@ class BidirectionalChat:
             self.show_connect_screen()
         except Exception as e:
             messagebox.showerror(f"Error: {e}")
+            self.show_connect_screen()
 
     #The function that gets the broadcast address of the local network
     def get_broadcast_address(self):
@@ -270,7 +283,7 @@ if __name__ == "__main__":
         root.iconphoto(True, icon)
 
     #Scale of app, change as desired
-    root.geometry("400x400+650+150")
+    root.geometry("450x600+650+150")
 
     #Creates an instance of the Bi-directional Chat App
     app = BidirectionalChat(root)
