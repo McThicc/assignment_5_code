@@ -73,7 +73,7 @@ class BidirectionalChat:
         self.status_label = tk.Label(self.root, text="", font=("Verdana", 12), bg="lightblue")
         self.status_label.pack(pady=10)
 
-        threading.Thread(target=self.attempt_connection, daemon=True).start()
+        threading.Thread(target=self.connect_client_socket, daemon=True).start()
 
     #The chat screen GUI
     def show_chat_screen(self):
@@ -92,8 +92,9 @@ class BidirectionalChat:
 
         self.disconnect_btn = tk.Button(root, text="Disconnect", command=self.disconnect).pack()
 
-        self.broadcast_btn = tk.Button(root, text="Broadcast", command=self.send_udp_broadcast)
-        self.broadcast_btn.pack(side=tk.RIGHT, padx=(5, 10), pady=10)
+        if self.broadcast_mode:
+            self.broadcast_btn = tk.Button(root, text="Broadcast", command=self.send_udp_broadcast)
+            self.broadcast_btn.pack(side=tk.RIGHT, padx=(5, 10), pady=10)
 
     #The function that appends messages to the chat log
     def append_messages(self, message):
@@ -131,12 +132,25 @@ class BidirectionalChat:
                 self.client_socket = socket(AF_INET, SOCK_STREAM)
                 self.client_socket.connect((self.target_ip, self.target_port))
                 self.connected = True
+                print("Client socket set up!")
                 self.root.after(0, self.show_chat_screen)
                 return
             except Exception as e:
                 self.connected = False
                 self.update_status(f"Attempt {attempt + 1} failed")
                 time.sleep(delay)
+
+    def attempt_connection(self):
+        try:
+            self.client_socket = socket(AF_INET, SOCK_STREAM)
+            self.client_socket.connect((self.target_ip, self.target_port))
+            self.connected = True
+            print("Client socket set up!")
+            self.root.after(0, self.show_chat_screen)
+        except Exception as e:
+            self.connected = False
+            self.root.after(0, lambda: messagebox.showerror("Connection Failed", str(e)))
+            self.root.after(0, self.show_connect_screen)
 
     def listen_udp_broadcasts(self):
         try:
@@ -181,6 +195,8 @@ class BidirectionalChat:
     #Clears the chat box so you can start fresh with each message
     def send_messages(self, event=None):
         msg = self.msg_entry.get()
+        if msg == "!quit":
+            self.disconnect()
         if msg and self.client_socket:
             if self.connected:
                 try:
@@ -219,17 +235,6 @@ class BidirectionalChat:
             self.show_connect_screen()
         except Exception as e:
             messagebox.showerror(f"Error: {e}")
-
-    def attempt_connection(self):
-        try:
-            self.client_socket = socket(AF_INET, SOCK_STREAM)
-            self.client_socket.connect((self.target_ip, self.target_port))
-            self.connected = True
-            self.root.after(0, self.show_chat_screen)
-        except Exception as e:
-            self.connected = False
-            self.root.after(0, lambda: messagebox.showerror("Connection Failed", str(e)))
-            self.root.after(0, self.show_connect_screen)
 
     #The function that gets the broadcast address of the local network
     def get_broadcast_address(self):
