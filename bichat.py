@@ -10,7 +10,8 @@ import platform
 class BidirectionalChat:
 
     #A rather nice font really
-    default_font = ("Verdana", 12)
+    default_font = ("Verdana", 16)
+    background_color = "#F0F8FF"
 
     #The stuff for making the dang thing work and some intial states of variables I modify later
     def __init__(self, root):
@@ -31,22 +32,23 @@ class BidirectionalChat:
         self.target_ip = tk.StringVar()
         self.target_port = tk.StringVar(value="14142")
 
-        self.root.config(bg="lightgray")
+        self.root.config(bg=self.background_color)
         self.root.option_add("*Font", self.default_font)
+        self.root.option_add("*Foreground", "#000080")
 
-        self.broadcast_mode = tk.BooleanVar()
-        tk.Checkbutton(self.root, text="Enable UDP Broadcast Mode", variable=self.broadcast_mode, bg="lightgray").pack()
-
-        tk.Label(self.root, text="Enter your username:", bg="lightgray").pack()
-        tk.Entry(self.root, textvariable=self.username).pack()
-        tk.Label(self.root, text="Enter listening port:", bg="lightgray").pack()
-        tk.Entry(self.root, textvariable=self.listen_port).pack()
-        tk.Label(self.root, text="Enter target IP:", bg="lightgray").pack()
-        tk.Entry(self.root, textvariable=self.target_ip).pack()
-        tk.Label(self.root, text="Enter target port:", bg="lightgray").pack()
-        tk.Entry(self.root, textvariable=self.target_port).pack()
+        tk.Label(self.root, text="Enter your username:", bg=self.background_color).pack()
+        tk.Entry(self.root, textvariable=self.username, bg="white").pack()
+        tk.Label(self.root, text="Enter listening port:", bg=self.background_color).pack()
+        tk.Entry(self.root, textvariable=self.listen_port, bg="white").pack()
+        tk.Label(self.root, text="Enter target IP:", bg=self.background_color).pack()
+        tk.Entry(self.root, textvariable=self.target_ip, bg="white").pack()
+        tk.Label(self.root, text="Enter target port:", bg=self.background_color).pack()
+        tk.Entry(self.root, textvariable=self.target_port, bg="white").pack()
 
         tk.Button(self.root, text="Connect", command=self.start_chat, bg="pink").pack(pady=10)
+
+        self.broadcast_mode = tk.BooleanVar()
+        tk.Checkbutton(self.root, text="Enable UDP Broadcast Mode", variable=self.broadcast_mode, bg=self.background_color).pack()
     
 
     #The taking of the login info to start the processes of creating a connection
@@ -80,6 +82,7 @@ class BidirectionalChat:
         self.clear_root()
 
         self.root.config(bg="lightblue")
+        self.root.option_add("*Foreground", "white")
         self.chat_log = scrolledtext.ScrolledText(root, wrap=tk.WORD, state='disabled')
         self.chat_log.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
 
@@ -89,15 +92,15 @@ class BidirectionalChat:
 
         #Only shows the send button if UDP broadcast mode was disabled
         if self.broadcast_mode.get() == False:
-            self.send_btn = tk.Button(root, text="Send", command=self.send_messages)
+            self.send_btn = tk.Button(root, text="Send", bg="pink", fg="black", command=self.send_messages)
             self.send_btn.pack(side=tk.RIGHT, padx=(5, 10), pady=10)
 
-        self.disconnect_btn = tk.Button(root, text="Disconnect", command=self.disconnect)
+        self.disconnect_btn = tk.Button(root, text="Disconnect", bg="pink", fg="black", command=self.disconnect)
         self.disconnect_btn.pack(side=tk.RIGHT, padx=(5, 10), pady=10)
 
         #Only shows the broadcast button if UDP broadcast mode was enabled
         if self.broadcast_mode.get():
-            self.broadcast_btn = tk.Button(root, text="Broadcast", command=self.send_udp_broadcast)
+            self.broadcast_btn = tk.Button(root, text="Broadcast", bg="pink", fg="black", command=self.send_udp_broadcast)
             self.broadcast_btn.pack(side=tk.RIGHT, padx=(5, 10), pady=10)
 
     #The function that appends messages to the chat log
@@ -143,6 +146,8 @@ class BidirectionalChat:
                 self.connected = False
                 self.update_status(f"Attempt {attempt + 1} failed")
                 time.sleep(delay)
+        self.root.after(0, lambda: messagebox.showerror("Connection Failed", str(e)))
+        self.root.after(0, self.show_connect_screen)
 
     def attempt_connection(self):
         try:
@@ -283,7 +288,7 @@ if __name__ == "__main__":
         root.iconphoto(True, icon)
 
     #Scale of app, change as desired
-    root.geometry("450x600+650+150")
+    root.geometry("550x600+650+150")
 
     #Creates an instance of the Bi-directional Chat App
     app = BidirectionalChat(root)
