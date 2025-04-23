@@ -82,16 +82,17 @@ class BidirectionalChat:
         self.clear_root()
 
         self.root.config(bg="lightblue")
-        self.root.option_add("*Foreground", "white")
+        self.root.option_add("*Foreground", "black")
         self.chat_log = scrolledtext.ScrolledText(root, wrap=tk.WORD, state='disabled')
         self.chat_log.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
 
-        self.msg_entry = tk.Entry(root)
+        self.msg_entry = tk.Entry(self.root, state='normal')
         self.msg_entry.pack(side=tk.LEFT, padx=(10, 5), pady=10, fill=tk.X, expand=True)
         self.msg_entry.bind("<Return>", self.send_messages)
+        print(f"msg_entry state: {self.msg_entry['state']}")
 
         #Only shows the send button if UDP broadcast mode was disabled
-        if self.broadcast_mode.get() == False:
+        if not self.broadcast_mode.get():
             self.send_btn = tk.Button(root, text="Send", bg="pink", fg="black", command=self.send_messages)
             self.send_btn.pack(side=tk.RIGHT, padx=(5, 10), pady=10)
 
@@ -221,7 +222,7 @@ class BidirectionalChat:
                     self.append_messages(f"Failed to send: {e}")
             else:
                 self.append_messages("Not Connected!!!")
-
+        
     #Tiny little baby function with the power to wipe creation away
     def clear_root(self):
         for widget in self.root.winfo_children():
