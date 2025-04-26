@@ -21,7 +21,7 @@ class BidirectionalChat:
         self.client_socket = None
         self.connected = False
         self.udp_socket = None
-
+        self.listen_only = False
         self.show_connect_screen()
     
     #The GUI for the login screen to enter your username, listening and target ports, and destination IP address
@@ -93,12 +93,12 @@ class BidirectionalChat:
         self.chat_log = scrolledtext.ScrolledText(root, wrap=tk.WORD, state='disabled')
         self.chat_log.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
 
-        self.msg_entry = tk.Entry(self.root, state='normal')
-        self.msg_entry.pack(side=tk.LEFT, padx=(10, 5), pady=10, fill=tk.X, expand=True)
-        print(f"msg_entry state: {self.msg_entry['state']}")
+        if not self.listen_only:
+            self.msg_entry = tk.Entry(self.root, state='normal')
+            self.msg_entry.pack(side=tk.LEFT, padx=(10, 5), pady=10, fill=tk.X, expand=True)
 
         #Only shows the send button if UDP broadcast mode was disabled
-        if not self.broadcast_mode.get():
+        if not self.broadcast_mode.get() and not self.listen_only:
             self.send_btn = tk.Button(root, text="Send", bg="pink", fg="black", command=self.send_messages)
             self.send_btn.pack(side=tk.RIGHT, padx=(5, 10), pady=10)
             self.msg_entry.bind("<Return>", self.send_messages)
@@ -164,6 +164,7 @@ class BidirectionalChat:
         self.root.after(0, self.show_connect_screen)
 
     #I know this kind of works, becuase the sending computer does recieve its own messages
+    #Update! It works sometimes
     def listen_udp_broadcasts(self):
         try:
             self.udp_socket = socket (AF_INET, SOCK_DGRAM)
@@ -185,7 +186,9 @@ class BidirectionalChat:
                 self.udp_socket.close()
 
     #This was supposed to be a way that you could be in a chat box that only recieves UDP broadcasts but it doesn't work :(
+    #It does work! But I have no clue what causes it too
     def start_udp_listen_only(self):
+        self.listen_only = True
         try:
             listen_port = int(self.listen_port.get())
             self.listen_port_udp = listen_port + 1
@@ -195,6 +198,7 @@ class BidirectionalChat:
             messagebox.showerror("Error", str(e))
 
     #I know this part is fully functional because you can see your sending computer recieving the message that just got sent by it
+    #Update: Does work!
     def send_udp_broadcast(self, event=None):
         if not self.broadcast_mode.get():
             return
@@ -266,6 +270,8 @@ class BidirectionalChat:
             self.append_messages("Disconnected")
             messagebox.showinfo("Disconnected!!", "You have been disconnected from the chat bozo, sorry.")
             self.show_connect_screen()
+            if self.listen_only:
+                self.listen_only = False
         except Exception as e:
             messagebox.showerror("Error", str(e))
             self.show_connect_screen()
