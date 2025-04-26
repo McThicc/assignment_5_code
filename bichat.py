@@ -163,6 +163,7 @@ class BidirectionalChat:
         self.root.after(0, lambda: messagebox.showerror("Connection Failed", str(last_exception)))
         self.root.after(0, self.show_connect_screen)
 
+    #I know this kind of works, becuase the sending computer does recieve its own messages
     def listen_udp_broadcasts(self):
         try:
             self.udp_socket = socket (AF_INET, SOCK_DGRAM)
@@ -183,6 +184,7 @@ class BidirectionalChat:
             if self.udp_socket:
                 self.udp_socket.close()
 
+    #This was supposed to be a way that you could be in a chat box that only recieves UDP broadcasts but it doesn't work :(
     def start_udp_listen_only(self):
         try:
             listen_port = int(self.listen_port.get())
@@ -192,7 +194,7 @@ class BidirectionalChat:
         except Exception as e:
             messagebox.showerror("Error", str(e))
 
-    #This does a lot and is very sketch
+    #I know this part is fully functional because you can see your sending computer recieving the message that just got sent by it
     def send_udp_broadcast(self, event=None):
         if not self.broadcast_mode.get():
             return
@@ -203,7 +205,7 @@ class BidirectionalChat:
                 broadcast_msg = f"[{self.username} - Broadcast]: {msg}"
                 udp_sender = socket(AF_INET, SOCK_DGRAM)
                 udp_sender.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
-                #Tries to calculate the proper broadcast address for the network. Defaults to 255.255.255.255 if it fails.
+                #Tries to calculate the proper broadcast address for the network. Defaults to 255.255.255.255 if it fails
                 broadcast_ip = self.get_broadcast_address()
                 print(f"Broadcasting to {broadcast_ip}:{self.target_port_udp}")
                 udp_sender.sendto(broadcast_msg.encode(), (broadcast_ip, self.target_port_udp))
@@ -268,7 +270,8 @@ class BidirectionalChat:
             messagebox.showerror("Error", str(e))
             self.show_connect_screen()
 
-    #The function that gets the broadcast address of the local network
+    #The function that gets the broadcast address of the local network, doesn't really work so it just sends 255.255.255.255
+    #because that's the one that gets recieved by the sending machine, but no matter what, the recieving machine never recieves.
     def get_broadcast_address(self):
         try:
             temp_socket = socket(AF_INET, SOCK_DGRAM)
@@ -279,8 +282,8 @@ class BidirectionalChat:
             ip_parts = local_ip.split('.')
             ip_parts[-1] = '255'
             broadcast_ip = '.'.join(ip_parts)
-            #return broadcast_ip
-            return '255.255.255.255'
+            broadcast_ip = '255.255.255.255'
+            return broadcast_ip
         except Exception as e:
             print(f"[Broadcast IP Error] {e}")
             return '255.255.255.255'  # Fallback if ^ this don't work
