@@ -49,7 +49,8 @@ class BidirectionalChat:
 
         self.broadcast_mode = tk.BooleanVar()
         tk.Checkbutton(self.root, text="Enable UDP Broadcast Mode", variable=self.broadcast_mode, bg=self.background_color).pack()
-    
+        tk.Button(self.root, text="Listen for UDP Broadcasts Only", command=self.start_udp_listen_only, bg=self.background_color).pack(pady=10)
+
 
     #The taking of the login info to start the processes of creating a connection
     #Shows loading screen
@@ -94,13 +95,13 @@ class BidirectionalChat:
 
         self.msg_entry = tk.Entry(self.root, state='normal')
         self.msg_entry.pack(side=tk.LEFT, padx=(10, 5), pady=10, fill=tk.X, expand=True)
-        self.msg_entry.bind("<Return>", self.send_messages)
         print(f"msg_entry state: {self.msg_entry['state']}")
 
         #Only shows the send button if UDP broadcast mode was disabled
         if not self.broadcast_mode.get():
             self.send_btn = tk.Button(root, text="Send", bg="pink", fg="black", command=self.send_messages)
             self.send_btn.pack(side=tk.RIGHT, padx=(5, 10), pady=10)
+            self.msg_entry.bind("<Return>", self.send_messages)
 
         self.disconnect_btn = tk.Button(root, text="Disconnect", bg="pink", fg="black", command=self.disconnect)
         self.disconnect_btn.pack(side=tk.RIGHT, padx=(5, 10), pady=10)
@@ -109,6 +110,7 @@ class BidirectionalChat:
         if self.broadcast_mode.get():
             self.broadcast_btn = tk.Button(root, text="Broadcast", bg="pink", fg="black", command=self.send_udp_broadcast)
             self.broadcast_btn.pack(side=tk.RIGHT, padx=(5, 10), pady=10)
+            self.msg_entry.bind("<Return>", self.send_udp_broadcast)
 
     #The function that appends messages to the chat log
     def append_messages(self, message):
@@ -178,6 +180,14 @@ class BidirectionalChat:
         finally:
             if self.udp_socket:
                 self.udp_socket.close()
+
+    def start_udp_listen_only(self):
+        try:
+            self.listen_port = int(self.listen_port.get())
+            threading.Thread(target=self.listen_udp_broadcasts, daemon=True).start()
+            self.show_chat_screen()
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
 
     #This does a lot and is very sketch
     def send_udp_broadcast(self):
