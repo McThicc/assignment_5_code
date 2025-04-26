@@ -169,10 +169,12 @@ class BidirectionalChat:
             self.udp_socket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
             self.udp_socket.bind(('', self.listen_port_udp))
 
+            print(self.listen_port_udp)
             while True:
                 try:
                     data, addr = self.udp_socket.recvfrom(1024)
                     message = data.decode()
+                    print(f"Received UDP broadcast: {message} from {addr}")
                     self.append_messages(f"{message}")
                 except Exception as e:
                     self.append_messages(f"[UDP Broadcast Error] {e}")
@@ -277,7 +279,8 @@ class BidirectionalChat:
             ip_parts = local_ip.split('.')
             ip_parts[-1] = '255'
             broadcast_ip = '.'.join(ip_parts)
-            return broadcast_ip
+            #return broadcast_ip
+            return '255.255.255.255'
         except Exception as e:
             print(f"[Broadcast IP Error] {e}")
             return '255.255.255.255'  # Fallback if ^ this don't work
