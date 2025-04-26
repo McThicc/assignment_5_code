@@ -191,7 +191,7 @@ class BidirectionalChat:
             messagebox.showerror("Error", str(e))
 
     #This does a lot and is very sketch
-    def send_udp_broadcast(self):
+    def send_udp_broadcast(self, event=None):
         if not self.broadcast_mode.get():
             return
         
