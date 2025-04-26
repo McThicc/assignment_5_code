@@ -183,7 +183,8 @@ class BidirectionalChat:
 
     def start_udp_listen_only(self):
         try:
-            self.listen_port = int(self.listen_port.get())
+            listen_port = int(self.listen_port.get())
+            self.listen_port_udp = listen_port + 1
             threading.Thread(target=self.listen_udp_broadcasts, daemon=True).start()
             self.show_chat_screen()
         except Exception as e:
@@ -248,7 +249,8 @@ class BidirectionalChat:
         try:
             #Sends a message to let the other user know that this user has disconnected
             disconnect_msg = f"[{self.username}] has disconnected."
-            self.client_socket.send(disconnect_msg.encode())
+            if self.client_socket:
+                self.client_socket.send(disconnect_msg.encode())
             #Shuts down all the sockets
             if self.client_socket:
                self.client_socket.close() 
